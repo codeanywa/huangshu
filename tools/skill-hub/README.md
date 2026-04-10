@@ -16,18 +16,24 @@ Skill Hub 是一个本地 Web UI：扫描全盘、聚合展示、可视化编辑
 ## 快速开始（一行命令）
 
 ```bash
-npx github:Backtthefuture/skillmanager
+npm install -g github:Backtthefuture/skillmanager && skill-hub
 ```
 
 首次运行会自动：
-1. 下载代码到 npx 缓存
+1. 下载代码并全局安装
 2. 安装依赖
 3. 构建前端与服务端
 4. 启动服务并打开浏览器到 `http://localhost:3456`
 
+**之后每次启动只要敲 `skill-hub` 就行**，不用再打这串长命令。
+
 要求：Node.js ≥ 20。
 
-> **说明**：一行 npx 命令走的是独立仓库 [`skillmanager`](https://github.com/Backtthefuture/skillmanager)（npx 不支持从 monorepo 子目录拉取）。本目录是源码镜像，方便你在 `huangshu` 合集里查阅和修改。
+> **说明**：一行命令走的是独立仓库 [`skillmanager`](https://github.com/Backtthefuture/skillmanager)（npm 不支持从 monorepo 子目录安装）。本目录是源码镜像，方便你在 `huangshu` 合集里查阅和修改。
+>
+> **更新到最新版**：`npm install -g github:Backtthefuture/skillmanager` 再跑一次即可。
+>
+> **卸载**：`npm uninstall -g claude-skill-hub`。
 
 ## 扫描覆盖的位置
 
