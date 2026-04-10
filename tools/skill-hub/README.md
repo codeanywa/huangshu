@@ -6,9 +6,9 @@
 
 当你装了几十个 Skill 后，你会遇到：
 
-- 同名 Skill 散落在不同目录（`~/.claude/skills/`、各个项目的 `skills/`）
+- 同名 Skill 散落在不同目录（`~/.claude/skills/`、插件、各个项目的 `.claude/skills/`）
 - 想改个 Skill 得手动翻目录
-- 不知道哪些是全局、哪些是项目私有，哪些重复了
+- 不知道哪些是全局、哪些是项目私有、哪些来自插件、哪些重复了
 - 改坏了想回滚，没有版本历史
 
 Skill Hub 是一个本地 Web UI：扫描全盘、聚合展示、可视化编辑、自动版本快照。
@@ -28,6 +28,25 @@ npx github:Backtthefuture/skillmanager
 要求：Node.js ≥ 20。
 
 > **说明**：一行 npx 命令走的是独立仓库 [`skillmanager`](https://github.com/Backtthefuture/skillmanager)（npx 不支持从 monorepo 子目录拉取）。本目录是源码镜像，方便你在 `huangshu` 合集里查阅和修改。
+
+## 扫描覆盖的位置
+
+- `~/.claude/skills/` — 全局 skill
+- `~/.claude/plugins/**/skills/` — Claude Code 插件附带的 skill（递归扫描）
+- `~/.claude/projects/*` 里注册过的项目 `.claude/skills/`
+- 常见开发目录：`~/Documents`、`~/Projects`、`~/Developer`、`~/Code`、`~/code`、`~/workspace`、`~/dev`、`~/work`、`~/repos`、`~/src` 下一层的项目
+- 当前工作目录及其向上 3 级目录的 `.claude/skills/`
+- 环境变量 `SKILL_HUB_EXTRA_PATHS=/path/a:/path/b` 指定的额外路径
+
+## 排查问题
+
+如果发现扫到的 skill 数量不对、或者页面打开是白屏，访问：
+
+```
+http://localhost:3456/api/debug
+```
+
+返回 JSON 包含：node 版本、cwd、homedir、所有被扫的路径及每个路径的命中数、耗时、错误。报 bug 时发这份 JSON 即可快速定位。
 
 ## 本地开发
 
@@ -53,13 +72,14 @@ npm start
 
 ## 可选环境变量
 
-- `PORT` — 自定义端口（默认 3456）
+- `PORT` — 自定义起始端口（默认 3456；占用时自动向上尝试到 3460）
 - `SKILL_HUB_NO_OPEN=1` — 启动时不自动打开浏览器
+- `SKILL_HUB_EXTRA_PATHS` — 额外的扫描路径，冒号或逗号分隔
 
 ## 目录结构
 
-- `server/` — Fastify 后端（API + WebSocket + 文件监听）
-- `web/` — React + Vite + Tailwind 前端
+- `server/` — Fastify 后端（API + WebSocket + 文件监听 + 扫描器）
+- `web/` — React + Vite + Tailwind 前端（含 ErrorBoundary）
 - `bin/` — CLI 入口与首次安装构建脚本
 
 ## 许可
