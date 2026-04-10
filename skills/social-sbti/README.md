@@ -49,21 +49,48 @@
 
 ## 安装
 
-作为 `huangshu` 合集的一部分:
+### 一键安装到 Claude Code(推荐)
 
 ```bash
-# 直接装 social-sbti,跳过选单
-npx skills add Backtthefuture/huangshu --skill social-sbti
-
-# 完全非交互(全局 + Claude Code)
-npx skills add Backtthefuture/huangshu --skill social-sbti -g -a claude-code -y
+npx skills add Backtthefuture/huangshu --skill social-sbti -a claude-code -g -y
 ```
 
-手动安装:
+装完后**完全退出 Claude Code 再重新打开**(不是只关窗口),skill 才会被扫描到。
+然后说一句 "跑一下 social-sbti" 就会触发。
+
+**⚠️ `-a claude-code` 不能省。**Vercel 的 `skills` CLI 支持 40+ agent,
+不指定 agent 时默认装到通用路径 `.agents/skills/`,而 Claude Code 只扫
+`~/.claude/skills/`(全局)和 `.claude/skills/`(项目)两个位置。
+
+每个参数的含义:
+
+| 参数 | 作用 | 省略后果 |
+|---|---|---|
+| `--skill social-sbti` | 直接装指定 skill,跳过交互选单 | 弹交互式选单让你选 |
+| `-a claude-code` | 目标是 Claude Code,路径走 `.claude/skills/` | **装到 `.agents/skills/`,Claude Code 看不到** |
+| `-g` | 全局装(所有项目可用) | 装到当前项目的 `.claude/skills/` |
+| `-y` | 跳过所有确认提示 | 每步都要按回车 |
+
+### 已经装到 `.agents/skills/` 了怎么办
+
+如果你之前跑的是不带 `-a claude-code` 的命令,skill 已经被装到了
+`<项目>/.agents/skills/social-sbti/`,Claude Code 看不见。两种救法:
+
+```bash
+# A. 软链到全局位置(不复制文件,一改全改)
+ln -s "$(pwd)/.agents/skills/social-sbti" ~/.claude/skills/social-sbti
+
+# B. 直接复制过去(独立副本)
+mkdir -p ~/.claude/skills
+cp -r ./.agents/skills/social-sbti ~/.claude/skills/
+```
+
+### 手动安装(不走 npx)
 
 ```bash
 git clone https://github.com/Backtthefuture/huangshu.git
-cp -r huangshu/skills/social-sbti your-project/.claude/skills/
+mkdir -p ~/.claude/skills
+cp -r huangshu/skills/social-sbti ~/.claude/skills/
 ```
 
 ## 首次使用

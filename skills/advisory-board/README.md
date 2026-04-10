@@ -32,22 +32,27 @@ Phase 6  可视化报告   →  生成交互式 HTML 网页（可选）
 
 ## 安装
 
-**推荐方式（自动）：**
+**推荐方式（一键装到 Claude Code）：**
 
 ```bash
-npx skills add Backtthefuture/huangshu --skill advisory-board
+npx skills add Backtthefuture/huangshu --skill advisory-board -a claude-code -g -y
 ```
+
+装完**完全退出 Claude Code 再重新打开**，然后说"开私董会"就会触发。
+
+> ⚠️ **`-a claude-code` 不能省**。`npx skills` 支持 40+ agent，不指定目标时默认装到通用路径 `.agents/skills/`，而 Claude Code 只扫 `~/.claude/skills/`（全局）和 `.claude/skills/`（项目）两个位置 —— 不加这个参数 skill 装了但看不见。
 
 **手动方式：**
 
 ```bash
-# 方式一：克隆仓库后复制
+# 方式一：克隆仓库后复制到全局 skills 目录
 git clone https://github.com/Backtthefuture/huangshu.git
-cp -r huangshu/skills/advisory-board your-project/skills/
+mkdir -p ~/.claude/skills
+cp -r huangshu/skills/advisory-board ~/.claude/skills/
 
-# 方式二：只下载单个 SKILL.md
-mkdir -p skills/advisory-board
-curl -o skills/advisory-board/SKILL.md \
+# 方式二：只下载单个 SKILL.md 到项目级
+mkdir -p .claude/skills/advisory-board
+curl -o .claude/skills/advisory-board/SKILL.md \
   https://raw.githubusercontent.com/Backtthefuture/huangshu/main/skills/advisory-board/SKILL.md
 ```
 
