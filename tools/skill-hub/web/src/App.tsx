@@ -10,10 +10,11 @@ import { Dashboard } from './components/Dashboard'
 import { SimilarView } from './components/SimilarView'
 import { TrashView } from './components/TrashView'
 import { SyncView } from './components/SyncView'
+import { ConflictsView } from './components/ConflictsView'
 import type { Skill } from './hooks/useSkills'
 
 type GroupBy = 'none' | 'scope' | 'source' | 'project'
-type View = 'skills' | 'similar' | 'dashboard' | 'trash' | 'sync'
+type View = 'skills' | 'similar' | 'dashboard' | 'trash' | 'sync' | 'conflicts'
 
 function App() {
   const { allSkills, skills, stats, projects, conflicts, loading, error, scan, filterSkills } = useSkills()
@@ -35,6 +36,7 @@ function App() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState<boolean>(false)
   const [bulkDeleting, setBulkDeleting] = useState<boolean>(false)
   const [bulkDeleteResult, setBulkDeleteResult] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+  const [conflictRowBusy, setConflictRowBusy] = useState<Set<string>>(new Set())
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     try {
       return localStorage.getItem('skill-hub:sidebar') !== 'closed'
@@ -188,11 +190,34 @@ function App() {
     }
   }
 
-  const handleConflictToggle = () => {
-    const next = !conflictOnly
-    setConflictOnly(next)
-    applyFilters({ conflictOnly: next })
+  // Conflict row actions — reuse existing endpoints, track per-row busy state
+  const withConflictBusy = async (skill: Skill, fn: () => Promise<void>) => {
+    setConflictRowBusy((prev) => new Set(prev).add(skill.id))
+    try {
+      await fn()
+      await scan()
+      await refreshTrashCount()
+    } finally {
+      setConflictRowBusy((prev) => {
+        const next = new Set(prev)
+        next.delete(skill.id)
+        return next
+      })
+    }
   }
+
+  const handleConflictDelete = (skill: Skill) =>
+    withConflictBusy(skill, async () => {
+      if (!confirm(`把 "${skill.name}" (${skill.scope}) 移到回收站?\n\n路径: ${skill.path}\n\n7 天内可在回收站恢复。`)) return
+      const res = await fetch(`/api/skills/${skill.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: skill.path, skillName: skill.name }),
+      })
+      const data = await res.json()
+      if (!data.ok) throw new Error(data.error)
+    })
+
 
   // Keyboard shortcut
   useEffect(() => {
@@ -366,6 +391,13 @@ function App() {
         {/* Dashboard view */}
         {view === 'sync' ? (
           <SyncView />
+        ) : view === 'conflicts' ? (
+          <ConflictsView
+            conflicts={conflicts}
+            onSkillClick={setSelectedSkill}
+            onDelete={handleConflictDelete}
+            busy={conflictRowBusy}
+          />
         ) : view === 'dashboard' ? (
           <Dashboard stats={stats} projects={projects} conflicts={conflicts} skills={allSkills} />
         ) : view === 'similar' ? (
@@ -439,22 +471,12 @@ function App() {
                     </span>
                     {conflicts.length > 0 && (
                       <button
-                        onClick={handleConflictToggle}
-                        title={conflictOnly ? '显示全部' : '仅显示冲突'}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-all
-                          ${conflictOnly
-                            ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-amber-300 hover:border-amber-500/30'
-                          }`}
+                        onClick={() => setView('conflicts')}
+                        title="查看同名冲突详情与处理方式"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-all bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20"
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                        <span>冲突 {conflicts.length}</span>
-                        {conflictOnly && (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                        )}
+                        <span>{conflicts.length} 组冲突 →</span>
                       </button>
                     )}
                   </div>
