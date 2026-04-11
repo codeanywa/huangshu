@@ -9,10 +9,11 @@ import { SkillDetail } from './components/SkillDetail'
 import { Dashboard } from './components/Dashboard'
 import { SimilarView } from './components/SimilarView'
 import { TrashView } from './components/TrashView'
+import { SyncView } from './components/SyncView'
 import type { Skill } from './hooks/useSkills'
 
 type GroupBy = 'none' | 'scope' | 'source' | 'project'
-type View = 'skills' | 'similar' | 'dashboard' | 'trash'
+type View = 'skills' | 'similar' | 'dashboard' | 'trash' | 'sync'
 
 function App() {
   const { allSkills, skills, stats, projects, conflicts, loading, error, scan, filterSkills } = useSkills()
@@ -179,6 +180,14 @@ function App() {
                 仪表盘
               </button>
               <button
+                onClick={() => setView('sync')}
+                className={`px-3 py-1 rounded-md text-xs transition-all ${
+                  view === 'sync' ? 'bg-slate-700 text-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                同步
+              </button>
+              <button
                 onClick={() => setView('trash')}
                 className={`px-3 py-1 rounded-md text-xs transition-all flex items-center gap-1.5 ${
                   view === 'trash' ? 'bg-slate-700 text-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-300'
@@ -279,7 +288,9 @@ function App() {
         )}
 
         {/* Dashboard view */}
-        {view === 'dashboard' ? (
+        {view === 'sync' ? (
+          <SyncView />
+        ) : view === 'dashboard' ? (
           <Dashboard stats={stats} projects={projects} conflicts={conflicts} skills={allSkills} />
         ) : view === 'similar' ? (
           <SimilarView onSkillClick={setSelectedSkill} />

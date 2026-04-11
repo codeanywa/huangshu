@@ -10,6 +10,7 @@ import { manageRoutes } from './routes/manage.js'
 import { versionRoutes } from './routes/versions.js'
 import { similarityRoutes } from './routes/similarity.js'
 import { trashRoutes } from './routes/trash.js'
+import { syncRoutes } from './routes/sync.js'
 import { startWatcher } from './scanner/watcher.js'
 import { invalidateCache } from './routes/skills.js'
 import { fullScan } from './scanner/discovery.js'
@@ -28,6 +29,7 @@ await app.register(manageRoutes)
 await app.register(versionRoutes)
 await app.register(similarityRoutes)
 await app.register(trashRoutes)
+await app.register(syncRoutes)
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok' }))
