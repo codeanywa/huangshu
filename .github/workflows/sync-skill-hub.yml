@@ -1,0 +1,102 @@
+name: sync skill-hub to skillmanager
+
+# Mirrors `tools/skill-hub/` in this repo to the standalone
+# Backtthefuture/skillmanager repo: rsyncs source, runs the build,
+# regenerates release/claude-skill-hub.tgz, and commits + pushes.
+#
+# Requires a secret named SKILLMANAGER_PUSH_TOKEN with write access
+# to the target repo (see .github/workflows/README for setup).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/skill-hub/**'
+      - '.github/workflows/sync-skill-hub.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: sync-skillmanager
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout huangshu
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Clone skillmanager
+        env:
+          TOKEN: ${{ secrets.SKILLMANAGER_PUSH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::SKILLMANAGER_PUSH_TOKEN secret is not set."
+            echo "Create a PAT with write access to Backtthefuture/skillmanager and add it as a repo secret."
+            exit 1
+          fi
+          git clone \
+            "https://x-access-token:${TOKEN}@github.com/Backtthefuture/skillmanager.git" \
+            target
+
+      - name: Sync source files
+        # --delete so renames and deletions propagate.
+        # Top-level excludes preserve .git / release / node_modules / dist
+        # in the target working copy. We rebuild dist explicitly, and
+        # regenerate release/ below.
+        run: |
+          rsync -av --delete \
+            --exclude='/.git' \
+            --exclude='/node_modules' \
+            --exclude='/dist' \
+            --exclude='/release' \
+            tools/skill-hub/ target/
+
+      - name: Install dependencies
+        working-directory: target
+        run: npm ci || npm install
+
+      - name: Clean and build
+        working-directory: target
+        run: |
+          rm -rf dist
+          npm run build
+
+      - name: Pack release tarball
+        working-directory: target
+        run: |
+          mkdir -p release
+          npm pack
+          mv claude-skill-hub-*.tgz release/claude-skill-hub.tgz
+          ls -la release/
+
+      - name: Commit and push
+        working-directory: target
+        env:
+          UPSTREAM_SHA: ${{ github.sha }}
+          UPSTREAM_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Don't commit node_modules even if it somehow got staged
+          echo "node_modules/" >> .gitignore
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Nothing to sync — target is already up to date."
+            exit 0
+          fi
+
+          SHORT_SHA="${UPSTREAM_SHA:0:7}"
+          HEADLINE="${UPSTREAM_MSG%%$'\n'*}"
+          git commit -m "sync from Backtthefuture/huangshu@${SHORT_SHA}" \
+            -m "Upstream: ${HEADLINE}" \
+            -m "Full upstream commit: https://github.com/Backtthefuture/huangshu/commit/${UPSTREAM_SHA}"
+
+          git push origin main
