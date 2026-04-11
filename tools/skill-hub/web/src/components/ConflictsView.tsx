@@ -6,10 +6,45 @@ interface Props {
   onSkillClick: (skill: Skill) => void
   onDelete: (skill: Skill) => Promise<void>
   busy: Set<string>
+  selectMode?: boolean
+  selectedIds?: Set<string>
+  onSelectToggle?: (skill: Skill) => void
+  onBulkDelete?: () => void
 }
 
-export function ConflictsView({ conflicts, onSkillClick, onDelete, busy }: Props) {
+export function ConflictsView({ conflicts, onSkillClick, onDelete, busy, selectMode, selectedIds, onSelectToggle, onBulkDelete }: Props) {
   const total = conflicts.reduce((n, g) => n + g.skills.length, 0)
+  const selectedCount = selectedIds?.size ?? 0
+  const allConflictIds = conflicts.flatMap((g) => g.skills.map((s) => s.id))
+  const allSelected = allConflictIds.length > 0 && allConflictIds.every((id) => selectedIds?.has(id))
+
+  const handleSelectAll = () => {
+    if (!onSelectToggle) return
+    allConflictIds.forEach((id) => {
+      const skill = conflicts.flatMap((g) => g.skills).find((s) => s.id === id)
+      if (skill) onSelectToggle(skill)
+    })
+  }
+
+  const handleSelectNonGlobal = () => {
+    if (!onSelectToggle) return
+    const nonGlobalIds = conflicts.flatMap((g) => g.skills.filter((s) => s.scope !== 'global').map((s) => s.id))
+    const allNonGlobalSelected = nonGlobalIds.length > 0 && nonGlobalIds.every((id) => selectedIds?.has(id))
+    nonGlobalIds.forEach((id) => {
+      const skill = conflicts.flatMap((g) => g.skills).find((s) => s.id === id)
+      if (skill) {
+        // If all are selected, deselect; otherwise select those not yet selected
+        if (allNonGlobalSelected) {
+          if (selectedIds?.has(id)) onSelectToggle(skill)
+        } else {
+          if (!selectedIds?.has(id)) onSelectToggle(skill)
+        }
+      }
+    })
+  }
+
+  const nonGlobalIds = conflicts.flatMap((g) => g.skills.filter((s) => s.scope !== 'global').map((s) => s.id))
+  const allNonGlobalSelected = nonGlobalIds.length > 0 && nonGlobalIds.every((id) => selectedIds?.has(id))
 
   return (
     <div>
@@ -40,6 +75,37 @@ export function ConflictsView({ conflicts, onSkillClick, onDelete, busy }: Props
             <div className="text-[11px] text-slate-400 mt-1">共 {total} 个 Skill</div>
           </div>
         </div>
+
+        {/* Select mode toolbar */}
+        {selectMode && (
+          <div className="mt-4 pt-4 border-t border-amber-500/20 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-amber-300 font-medium">
+                已选 {selectedCount} / {total} 个
+              </span>
+              <button
+                onClick={handleSelectNonGlobal}
+                className="text-xs px-2 py-1 rounded bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300"
+              >
+                {allNonGlobalSelected ? '取消非全局' : '选择非全局'}
+              </button>
+              <button
+                onClick={handleSelectAll}
+                className="text-xs text-slate-400 hover:text-slate-200"
+              >
+                {allSelected ? '取消全选' : '全选'}
+              </button>
+            </div>
+            {selectedCount > 0 && onBulkDelete && (
+              <button
+                onClick={onBulkDelete}
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25 transition-colors"
+              >
+                删除所选 ({selectedCount})
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {conflicts.length === 0 && (
@@ -58,6 +124,9 @@ export function ConflictsView({ conflicts, onSkillClick, onDelete, busy }: Props
             onSkillClick={onSkillClick}
             onDelete={onDelete}
             busy={busy}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onSelectToggle={onSelectToggle}
           />
         ))}
       </div>
@@ -70,11 +139,17 @@ function ConflictGroupCard({
   onSkillClick,
   onDelete,
   busy,
+  selectMode,
+  selectedIds,
+  onSelectToggle,
 }: {
   group: ConflictGroup
   onSkillClick: (skill: Skill) => void
   onDelete: (skill: Skill) => Promise<void>
   busy: Set<string>
+  selectMode?: boolean
+  selectedIds?: Set<string>
+  onSelectToggle?: (skill: Skill) => void
 }) {
   return (
     <div className="rounded-xl border border-amber-500/20 bg-slate-900/40 overflow-hidden">
@@ -97,6 +172,9 @@ function ConflictGroupCard({
             onSkillClick={onSkillClick}
             onDelete={onDelete}
             isBusy={busy.has(skill.id)}
+            selectMode={selectMode}
+            selected={selectedIds?.has(skill.id) ?? false}
+            onSelectToggle={onSelectToggle}
           />
         ))}
       </div>
@@ -109,17 +187,41 @@ function ConflictRow({
   onSkillClick,
   onDelete,
   isBusy,
+  selectMode,
+  selected,
+  onSelectToggle,
 }: {
   skill: Skill
   onSkillClick: (skill: Skill) => void
   onDelete: (skill: Skill) => Promise<void>
   isBusy: boolean
+  selectMode?: boolean
+  selected?: boolean
+  onSelectToggle?: (skill: Skill) => void
 }) {
   const scopeLabel = skill.scope === 'global' ? '全局' : skill.scope === 'plugin' ? '插件' : skill.projectName || '项目'
   const lastMod = formatRelative(skill.lastModified)
 
   return (
     <div className={`px-4 py-3 flex items-start justify-between gap-3 hover:bg-slate-800/30 transition-colors ${isBusy ? 'opacity-50 pointer-events-none' : ''}`}>
+      {/* Checkbox in select mode */}
+      {selectMode && onSelectToggle && (
+        <button
+          onClick={() => onSelectToggle(skill)}
+          className="mt-0.5 shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer"
+          style={{
+            background: selected ? 'var(--color-indigo-500, #6366f1)' : 'transparent',
+            borderColor: selected ? 'var(--color-indigo-500, #6366f1)' : 'var(--color-slate-600, #475569)',
+          }}
+        >
+          {selected && (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </button>
+      )}
+
       <div className="flex-1 min-w-0">
         {/* Title row */}
         <div className="flex items-center gap-2 mb-1 flex-wrap">
