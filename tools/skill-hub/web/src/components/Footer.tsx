@@ -16,7 +16,7 @@ export function Footer({ onAboutClick }: { onAboutClick: () => void }) {
             onClick={onAboutClick}
             className="text-slate-400 font-medium hover:text-indigo-300 transition-colors"
           >
-            黄叔
+            用户
           </button>
         </span>
         <span className="hidden sm:inline text-slate-800">·</span>

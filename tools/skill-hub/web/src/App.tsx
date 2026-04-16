@@ -253,7 +253,7 @@ function App() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setAboutOpen(true)}
-              title="关于黄叔"
+              title="关于用户"
               className="flex items-center gap-3 group"
             >
               <div className="w-9 h-9 rounded-xl bg-yellow-400 flex items-center justify-center text-slate-900 font-bold text-base shadow-lg shadow-yellow-400/20 group-hover:scale-105 group-hover:bg-yellow-300 transition-all">

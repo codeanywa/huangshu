@@ -1,4 +1,4 @@
-# 黄叔开源 Skill 集合
+# 用户开源 Skill 集合
 
 > 为 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 打造的实用 Skill，开箱即用。
 
@@ -24,7 +24,7 @@
 
 ## 🛠️ 工具（Tools）
 
-除了 Skill 本体，这里还收录黄叔自用的 Skill 周边工具。
+除了 Skill 本体，这里还收录用户自用的 Skill 周边工具。
 
 | 工具 | 说明 | 首次安装 | 再次启动 |
 |-----|------|---------|---------|

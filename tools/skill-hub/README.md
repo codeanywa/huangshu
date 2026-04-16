@@ -1,6 +1,6 @@
 # Skill Hub
 
-> 黄叔的 Claude Skill 可视化管理器 — 一键扫描并管理你机器上所有 Claude Agent Skills。
+> 用户的 Claude Skill 可视化管理器 — 一键扫描并管理你机器上所有 Claude Agent Skills。
 
 ## 它解决了什么问题
 

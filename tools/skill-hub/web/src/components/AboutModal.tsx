@@ -55,7 +55,7 @@ export function AboutModal({ open, onClose, stats, conflictCount }: Props) {
           <div className="w-20 h-20 rounded-2xl bg-yellow-400 flex items-center justify-center text-slate-900 font-bold text-3xl shadow-lg shadow-yellow-400/30 mb-4">
             黄
           </div>
-          <h2 className="text-xl font-bold text-slate-100 mb-1">黄叔 · Skill Hub</h2>
+          <h2 className="text-xl font-bold text-slate-100 mb-1">用户 · Skill Hub</h2>
           <div className="text-xs text-slate-500 mb-3">v{VERSION}</div>
           <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
             产品经理 · 折腾 AI + 效率工具
@@ -73,7 +73,7 @@ export function AboutModal({ open, onClose, stats, conflictCount }: Props) {
         {/* Social links */}
         <div className="space-y-2 mb-5">
           <SocialRow href={LINKS.x} label="X (Twitter)" value="@PMbackttfuture" icon={<XIcon />} />
-          <SocialRow href={LINKS.jike} label="即刻" value="黄叔" icon={<JikeIcon />} />
+          <SocialRow href={LINKS.jike} label="即刻" value="用户" icon={<JikeIcon />} />
           <SocialRow
             href={LINKS.github}
             label="GitHub"

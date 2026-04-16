@@ -129,7 +129,7 @@
 ```json
 {
   "profile": {
-    "screen_name": "AI产品黄叔",
+    "screen_name": "AI产品用户",
     "platform": "jike",
     "bio": "研究 AI 产品的",
     "post_count": 200
