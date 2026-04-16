@@ -15,17 +15,18 @@ import { AboutModal } from './components/AboutModal'
 import { Footer } from './components/Footer'
 import type { Skill } from './hooks/useSkills'
 
-type GroupBy = 'none' | 'scope' | 'source' | 'project'
+type GroupBy = 'none' | 'scope' | 'source' | 'project' | 'category'
 type View = 'skills' | 'similar' | 'dashboard' | 'trash' | 'sync' | 'conflicts'
 
 function App() {
-  const { allSkills, skills, stats, projects, conflicts, loading, error, scan, filterSkills } = useSkills()
+  const { allSkills, skills, stats, projects, conflicts, categories, health, mergeSuggestions, loading, error, scan, filterSkills } = useSkills()
   const { theme, toggle: toggleTheme } = useTheme()
 
   const [view, setView] = useState<View>('skills')
   const [scopeFilter, setScopeFilter] = useState('all')
   const [sourceFilter, setSourceFilter] = useState('all')
   const [agentFilter, setAgentFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [projectFilter, setProjectFilter] = useState('all')
   const [conflictOnly, setConflictOnly] = useState(false)
   const [search, setSearch] = useState('')
@@ -85,17 +86,18 @@ function App() {
   )
 
   const applyFilters = useCallback(
-    (overrides?: { scope?: string; source?: string; agent?: string; project?: string; search?: string; conflictOnly?: boolean }) => {
+    (overrides?: { scope?: string; source?: string; agent?: string; category?: string; project?: string; search?: string; conflictOnly?: boolean }) => {
       filterSkills({
         scope: overrides?.scope ?? scopeFilter,
         source: overrides?.source ?? sourceFilter,
         agent: overrides?.agent ?? agentFilter,
+        category: overrides?.category ?? categoryFilter,
         project: overrides?.project ?? projectFilter,
         search: overrides?.search ?? search,
         conflictOnly: overrides?.conflictOnly ?? conflictOnly,
       })
     },
-    [filterSkills, scopeFilter, sourceFilter, agentFilter, projectFilter, search, conflictOnly],
+    [filterSkills, scopeFilter, sourceFilter, agentFilter, categoryFilter, projectFilter, search, conflictOnly],
   )
 
   const handleScopeChange = (v: string) => {
@@ -112,6 +114,11 @@ function App() {
   const handleAgentChange = (v: string) => {
     setAgentFilter(v)
     applyFilters({ agent: v })
+  }
+
+  const handleCategoryChange = (v: string) => {
+    setCategoryFilter(v)
+    applyFilters({ category: v })
   }
 
   const handleProjectChange = (v: string) => {
@@ -373,7 +380,7 @@ function App() {
       <div className="max-w-[1400px] mx-auto px-6 py-6">
         {/* Stats */}
         {stats.total > 0 && (
-          <StatsBar stats={stats} projects={projects} conflicts={conflicts.length} />
+          <StatsBar stats={stats} projects={projects} conflicts={conflicts.length} health={health} />
         )}
 
         {error && (
@@ -400,36 +407,14 @@ function App() {
         {view === 'sync' ? (
           <SyncView />
         ) : view === 'conflicts' ? (
-          <>
-            <div className="flex items-center justify-end mb-4">
-              <button
-                onClick={toggleSelectMode}
-                title={selectMode ? '退出批量选择' : '进入批量选择'}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-all ${
-                  selectMode
-                    ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                }`}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>{selectMode ? '完成' : '批量选择'}</span>
-              </button>
-            </div>
-            <ConflictsView
-              conflicts={conflicts}
-              onSkillClick={setSelectedSkill}
-              onDelete={handleConflictDelete}
-              busy={conflictRowBusy}
-              selectMode={selectMode}
-              selectedIds={selectedIds}
-              onSelectToggle={handleSelectToggle}
-              onBulkDelete={() => setBulkDeleteConfirm(true)}
-            />
-          </>
+          <ConflictsView
+            conflicts={conflicts}
+            onSkillClick={setSelectedSkill}
+            onDelete={handleConflictDelete}
+            busy={conflictRowBusy}
+          />
         ) : view === 'dashboard' ? (
-          <Dashboard stats={stats} projects={projects} conflicts={conflicts} skills={allSkills} />
+          <Dashboard stats={stats} projects={projects} conflicts={conflicts} skills={allSkills} health={health} categories={categories} mergeSuggestions={mergeSuggestions} onSkillClick={setSelectedSkill} />
         ) : view === 'similar' ? (
           <SimilarView onSkillClick={setSelectedSkill} />
         ) : view === 'trash' ? (
@@ -462,10 +447,12 @@ function App() {
                   scopeFilter={scopeFilter}
                   sourceFilter={sourceFilter}
                   agentFilter={agentFilter}
+                  categoryFilter={categoryFilter}
                   projectFilter={projectFilter}
                   onScopeChange={handleScopeChange}
                   onSourceChange={handleSourceChange}
                   onAgentChange={handleAgentChange}
+                  onCategoryChange={handleCategoryChange}
                   onProjectChange={handleProjectChange}
                 />
               )}
@@ -529,6 +516,7 @@ function App() {
                     <div className="flex items-center gap-1 bg-slate-900 rounded-lg border border-slate-800 p-0.5">
                       {([
                         { value: 'scope', label: '按层级' },
+                        { value: 'category', label: '按分类' },
                         { value: 'source', label: '按来源' },
                         { value: 'none', label: '平铺' },
                       ] as { value: GroupBy; label: string }[]).map((opt) => (
